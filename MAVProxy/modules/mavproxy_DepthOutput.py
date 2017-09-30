@@ -48,6 +48,8 @@ class DepthOutputModule(mp_module.MPModule):
         elif m.get_type() == 'GLOBAL_POSITION_INT':
             if self.depth_source == 'filtered':
                 self.data['depth'] = -m.relative_alt / 1000.0 # m.relative alt is mm
+        elif m.get_type() == 'VFR_HUD':
+            self.data['orientation'] = m.heading
 
     def send_data(self):
         if time.time() < self.last_update + 0.25:
