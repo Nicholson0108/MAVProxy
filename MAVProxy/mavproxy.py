@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# encoding=utf-8
 '''
 mavproxy - a MAVLink proxy program
 
@@ -19,6 +20,7 @@ from MAVProxy.modules.lib import textconsole
 from MAVProxy.modules.lib import rline
 from MAVProxy.modules.lib import mp_module
 from MAVProxy.modules.lib import dumpstacks
+from MAVProxy.modules import mavproxy_DepthOutput
 
 # adding all this allows pyinstaller to build a working windows executable
 # note that using --hidden-import does not work for these modules
@@ -547,6 +549,7 @@ def process_master(m):
 
 def process_mavlink(slave):
     '''process packets from MAVLink slaves, forwarding to the master'''
+    print("进入process_mavlink")
     try:
         buf = slave.recv()
     except socket.error:
@@ -565,6 +568,8 @@ def process_mavlink(slave):
         for m in msgs:
             if mpstate.status.watch is not None:
                 if fnmatch.fnmatch(m.get_type().upper(), mpstate.status.watch.upper()):
+                    print("解算数据")
+                    depthoutputmodule.mavlink_packet(m)
                     mpstate.console.writeln('> '+ str(m))
             mpstate.master().write(m.get_msgbuf())
     mpstate.status.counters['Slave'] += 1
@@ -749,6 +754,7 @@ def periodic_tasks():
 
 def main_loop():
     '''main processing loop'''
+    print("进入main_loop")
     if not mpstate.status.setup_mode and not opts.nowait:
         for master in mpstate.mav_master:
             send_heartbeat(master)
@@ -775,7 +781,7 @@ def main_loop():
                     process_master(master)
 
         periodic_tasks()
-
+		
         rin = []
         for master in mpstate.mav_master:
             if master.fd is not None and not master.portdead:
@@ -988,7 +994,9 @@ if __name__ == '__main__':
     # queues for logging
     mpstate.logqueue = Queue.Queue()
     mpstate.logqueue_raw = Queue.Queue()
-
+    # 初始化mavproxy_DepthOutput
+    print("初始化mavproxy_DepthOutput")
+    depthoutputmodule = mavproxy_DepthOutput.init(mpstate)
 
     if opts.speech:
         # start the speech-dispatcher early, so it doesn't inherit any ports from
